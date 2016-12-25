@@ -4,3 +4,7 @@
 # Ignore Visual Studio's Database Files
 *.VC.opendb
 *.VC.db
+
+# Ignore Visual Studio's Compiled Files
+Release
+Debug
