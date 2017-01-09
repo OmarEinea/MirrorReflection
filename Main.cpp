@@ -2,22 +2,63 @@
 #include <windows.h> 
 #include <gl/Gl.h>
 #include <gl/glut.h>
+#include <vector>
 
 using namespace std;
 
+class Point {
+public:
+	double x, y;
+	Point(): x(0), y(0) {}
+	Point(double a, double b): x(a), y(b) {}
+};
+
+class Mirror {
+public:
+	Point p1, p2;
+	bool released;
+	Mirror(Point a) : p1(a), p2(a), released(0) {}
+	Mirror(Point a, Point b) : p1(a), p2(b), released(1) {}
+};
+
 // Window Width and Height
 const int w = 1280, h = 720;
+vector<Mirror> mirrors;
 
 void myDisplay(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glColor3f(1, 0, 0);
 	glBegin(GL_LINES);
+	// Draw Light Source
+	glColor3f(1, 0, 0);
 	glVertex2i(w * 0.95, h);
 	glVertex2i(w * 0.95, 0);
+	// Draw Mirrors
+	glColor3f(0, 0, 1);
+	for (Mirror m : mirrors) {
+		glVertex2i(m.p1.x, m.p1.y);
+		glVertex2i(m.p2.x, m.p2.y);
+	}
 	glEnd();
 
 	glFlush();
+}
+
+void myMouse(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON)
+		if (state == GLUT_DOWN && (mirrors.size() == 0 || mirrors.back().released))
+			mirrors.push_back(Mirror(Point(x, h - y)));
+		else
+			mirrors.back().released = true;
+	glutPostRedisplay();
+}
+
+void myMovedMouse(int x, int y) {
+	if (mirrors.size() > 0 && !mirrors.back().released) {
+		mirrors.back().p2.x = x;
+		mirrors.back().p2.y = h - y;
+	}
+	glutPostRedisplay();
 }
 
 void main(int argc, char** argv) {
@@ -27,12 +68,14 @@ void main(int argc, char** argv) {
 	glutInitWindowPosition(50, 50);
 	glutCreateWindow("Mirror Reflection Game");
 	glutDisplayFunc(myDisplay);
+	glutMouseFunc(myMouse);
+	glutMotionFunc(myMovedMouse);
 	glClearColor(1, 1, 1, 0);
 	glColor3f(0, 0, 0);
 	glPointSize(8.0);
 	glLineWidth(4.0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0.0, w, 0.0, h);
+	gluOrtho2D(0, w, 0, h);
 	glutMainLoop();
 }
