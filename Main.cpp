@@ -5,12 +5,14 @@
 #include <vector>
 
 using namespace std;
+// Window Width and Height
+const int w = 1280, h = 720;
 
 class Point {
 public:
 	double x, y;
-	Point(): x(0), y(0) {}
-	Point(double a, double b): x(a), y(b) {}
+	Point() : x(0), y(0) {}
+	Point(double a, double b) : x(a), y(b) {}
 };
 
 class Mirror {
@@ -21,9 +23,17 @@ public:
 	Mirror(Point a, Point b) : p1(a), p2(b), released(1) {}
 };
 
-// Window Width and Height
-const int w = 1280, h = 720;
+class Light {
+public:
+	vector<Point> points;
+	Light() {
+		points.push_back(Point(w * 0.95, -h));
+		points.push_back(Point(w * 0.95, 2 * h));
+	}
+};
+
 vector<Mirror> mirrors;
+Light light;
 
 void myDisplay(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -31,8 +41,8 @@ void myDisplay(void) {
 	glBegin(GL_LINES);
 	// Draw Light Source
 	glColor3f(1, 0, 0);
-	glVertex2i(w * 0.95, h);
-	glVertex2i(w * 0.95, 0);
+	for (Point p : light.points)
+		glVertex2i(p.x, p.y);
 	// Draw Mirrors
 	glColor3f(0, 0, 1);
 	for (Mirror m : mirrors) {
