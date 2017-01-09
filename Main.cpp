@@ -15,6 +15,19 @@ public:
 	Point(double a, double b) : x(a), y(b) {}
 };
 
+class Vector {
+public:
+	double x, y;
+	Vector(double a, double b) : x(a), y(b) {}
+	Vector(Point p1, Point p2) : x(p1.x - p2.x), y(p1.y - p2.y) {}
+	Vector perp() {
+		return Vector(-y, x);
+	}
+	double dot(Vector v) {
+		return x * v.x + y * v.y;
+	}
+};
+
 class Mirror {
 public:
 	Point p1, p2;
@@ -29,6 +42,20 @@ public:
 	Light() {
 		points.push_back(Point(w * 0.95, -h));
 		points.push_back(Point(w * 0.95, 2 * h));
+	}
+	bool intersects(Mirror m) {
+		Vector d = Vector(m.p1, m.p2);
+		Vector dPerp = d.perp();
+		for (int i = 1; i < points.size(); i++) {
+			Vector b(points[i - 1], points[i]);
+			Vector c(m.p1, points[i - 1]), bPerp = b.perp();
+			if (b.dot(dPerp) != 0) {
+				double t = - c.dot(dPerp) / b.dot(dPerp);
+				double u = c.dot(bPerp) / d.dot(bPerp);
+				return 0 <= t && t <= 1 && 0 <= u && u <= 1;
+			}
+		}
+		return false;
 	}
 };
 
