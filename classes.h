@@ -43,11 +43,9 @@ public:
 class Mirror {
 public:
 	Point p1, p2;
-	bool released;
 	double distance, t;
 	Vector normal;
-	Mirror(Point a) : p1(a), p2(a), released(0) {}
-	Mirror(Point a, Point b) : p1(a), p2(b), released(1) {}
+	Mirror(Point a) : p1(a), p2(a) {}
 };
 
 class Light {

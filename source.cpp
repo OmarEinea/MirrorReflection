@@ -10,6 +10,7 @@ using namespace std;
 // Window Width and Height
 const int w = 1280, h = 720;
 vector<Mirror> mirrors;
+Point *clicked = NULL;
 
 void myDisplay(void) {
 	Light light(w, h);
@@ -23,32 +24,47 @@ void myDisplay(void) {
 		glVertex2i(p.x, p.y);
 	glEnd();
 
-	glBegin(GL_LINES);
-	// Draw Mirrors
-	glColor3f(0, 0, 1);
 	for (Mirror m : mirrors) {
+		// Draw Mirrors Lines
+		glColor3f(0, 0, 1);
+		glBegin(GL_LINES);
 		glVertex2i(m.p1.x, m.p1.y);
 		glVertex2i(m.p2.x, m.p2.y);
+		glEnd();
+		// Draw Mirrors Handles
+		glBegin(GL_POINTS);
+		glColor3f(0, 0.5, 1);
+		glVertex2i(m.p1.x, m.p1.y);
+		glVertex2i(m.p2.x, m.p2.y);
+		glEnd();
 	}
-	glEnd();
+
 
 	glutSwapBuffers();
 	glFlush();
 }
 
 void myMouse(int button, int state, int x, int y) {
+	Point mouse(x, h - y);
 	if (button == GLUT_LEFT_BUTTON)
-		if (state == GLUT_DOWN && (mirrors.size() == 0 || mirrors.back().released))
-			mirrors.push_back(Mirror(Point(x, h - y)));
-		else
-			mirrors.back().released = true;
+		if (state == GLUT_DOWN && (mirrors.size() == 0 || !clicked)) {
+			for (auto& m : mirrors) {
+				if (Vector(m.p1, mouse).length() < 10) clicked = &m.p1;
+				if (Vector(m.p2, mouse).length() < 10) clicked = &m.p2;
+			}
+			if(!clicked) {
+				mirrors.push_back(Mirror(mouse));
+				clicked = &mirrors.back().p1;
+			}
+		} else
+			clicked = NULL;
 	glutPostRedisplay();
 }
 
 void myMovedMouse(int x, int y) {
-	if (mirrors.size() > 0 && !mirrors.back().released) {
-		mirrors.back().p2.x = x;
-		mirrors.back().p2.y = h - y;
+	if(clicked) {
+		clicked->x = x;
+		clicked->y = h - y;
 	}
 	glutPostRedisplay();
 }
@@ -64,8 +80,11 @@ void main(int argc, char** argv) {
 	glutMotionFunc(myMovedMouse);
 	glClearColor(1, 1, 1, 0);
 	glColor3f(0, 0, 0);
-	glPointSize(8.0);
-	glLineWidth(4.0);
+	glPointSize(10);
+	glEnable(GL_POINT_SMOOTH);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glLineWidth(4);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluOrtho2D(0, w, 0, h);
