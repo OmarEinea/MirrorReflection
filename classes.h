@@ -1,3 +1,5 @@
+#include <windows.h> 
+#include <gl/Gl.h>
 #include <vector>
 #include <cmath>
 
@@ -5,31 +7,31 @@ using namespace std;
 
 class Point {
 public:
-	double x, y;
+	GLdouble x, y;
 	Point() : x(0), y(0) {}
-	Point(double a, double b) : x(a), y(b) {}
+	Point(GLdouble a, GLdouble b) : x(a), y(b) {}
 };
 
 class Vector {
 public:
-	double x, y;
+	GLdouble x, y;
 	Vector() : x(0), y(0) {}
-	Vector(double a, double b) : x(a), y(b) {}
+	Vector(GLdouble a, GLdouble b) : x(a), y(b) {}
 	Vector(Point p1, Point p2) : x(p1.x - p2.x), y(p1.y - p2.y) {}
 	Vector perp() {
 		return Vector(-y, x);
 	}
-	double dot(Vector v) {
+	GLdouble dot(Vector v) {
 		return x * v.x + y * v.y;
 	}
-	double length() {
+	GLdouble length() {
 		return sqrt(x * x + y * y);
 	}
 	Vector normal() {
-		double l = length();
+		GLdouble l = length();
 		return l != 0 ? Vector(x / l, y / l) : Vector();
 	}
-	Vector operator*(double num) {
+	Vector operator*(GLdouble num) {
 		return Vector(x * num, y * num);
 	}
 	Vector operator-(Vector v) {
@@ -43,15 +45,18 @@ public:
 class Mirror {
 public:
 	Point p1, p2;
-	double distance, t;
 	Vector normal;
+	GLdouble distance, t;
+	bool type = 1, goal = 0;
 	Mirror(Point a) : p1(a), p2(a) {}
+	Mirror(Point a, Point b) : p1(a), p2(b), type(0) {}
 };
 
 class Light {
 public:
 	vector<Point> points;
-	Light(int width, int height) {
+	bool won = false;
+	Light(GLdouble width, GLdouble height) {
 		points.push_back(Point(width * 0.95, -height));
 		points.push_back(Point(width * 0.95, 2 * height));
 	}
@@ -63,8 +68,8 @@ public:
 			Vector d = Vector(m.p1, m.p2);
 			Vector dPerp = d.perp();
 			Vector c(m.p1, p1);
-			double t = -c.dot(dPerp) / b.dot(dPerp);
-			double u = c.dot(bPerp) / d.dot(bPerp);
+			GLdouble t = -c.dot(dPerp) / b.dot(dPerp);
+			GLdouble u = c.dot(bPerp) / d.dot(bPerp);
 			if (b.dot(dPerp) != 0 && 0 <= t && t <= 1 && 0 <= u && u <= 1) {
 				m.distance = Vector(p1, b * -t + p1).length();
 				if (m.distance > 1) {
@@ -80,6 +85,10 @@ public:
 		for (Mirror m : intersecting)
 			if (m.distance < closest.distance)
 				closest = m;
+		if (closest.goal) {
+			won = true;
+			return false;
+		}
 		*p2 = b * closest.t + p1;
 		points.push_back(b - closest.normal * 2 * b.dot(closest.normal) + *p2);
 		return true;
