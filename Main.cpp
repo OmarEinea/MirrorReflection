@@ -52,7 +52,6 @@ public:
 	bool released;
 	double distance, t;
 	Vector normal;
-	int index;
 	Mirror(Point a) : p1(a), p2(a), released(0) {}
 	Mirror(Point a, Point b) : p1(a), p2(b), released(1) {}
 };
@@ -64,34 +63,35 @@ public:
 		points.push_back(Point(w * 0.95, -h));
 		points.push_back(Point(w * 0.95, 2 * h));
 	}
-	int calcClosestReflection(vector<Mirror> mirrors) {
-		int size = points.size() - 1;
-		Vector b(points[size - 1], points[size]), bPerp = b.perp();
+	bool calcClosestReflection(vector<Mirror> mirrors) {
+		Point p1 = points[points.size() - 2], *p2 = &points[points.size() - 1];
+		Vector b(p1, *p2), bPerp = b.perp();
 		vector<Mirror> intersecting;
 		for (int i = 0; i < mirrors.size(); i++) {
 			Mirror m = mirrors[i];
 			Vector d = Vector(m.p1, m.p2);
 			Vector dPerp = d.perp();
-			Vector c(m.p1, points[size - 1]);
+			Vector c(m.p1, p1);
 			double t = -c.dot(dPerp) / b.dot(dPerp);
 			double u = c.dot(bPerp) / d.dot(bPerp);
 			if (b.dot(dPerp) != 0 && 0 <= t && t <= 1 && 0 <= u && u <= 1) {
-				m.distance = Vector(points[size - 1], b * -t + points[size - 1]).length();
-				m.t = -t;
-				m.normal = d.normal();
-				m.index = i;
-				intersecting.push_back(m);
+				m.distance = Vector(p1, b * -t + p1).length();
+				if (m.distance > 1) {
+					m.t = -t;
+					m.normal = d.normal();
+					intersecting.push_back(m);
+				}
 			}
 		}
 		if (intersecting.size() == 0)
-			return -1;
+			return false;
 		Mirror closest = intersecting.front();
 		for (Mirror m : intersecting)
 			if (m.distance < closest.distance)
 				closest = m;
-		points[size] = b * closest.t + points[size - 1];
-		points.push_back(b - closest.normal * 2 * b.dot(closest.normal) + points[size]);
-		return closest.index;
+		*p2 = b * closest.t + p1;
+		points.push_back(b - closest.normal * 2 * b.dot(closest.normal) + *p2);
+		return true;
 	}
 };
 
@@ -99,14 +99,9 @@ vector<Mirror> mirrors;
 
 void myDisplay(void) {
 	Light light;
-	vector<Mirror> mirrorsLeft = mirrors;
-	for (int i = mirrorsLeft.size(); i > 0; i--) {
-		int index = light.calcClosestReflection(mirrorsLeft);
-		if(index > 0)
-			mirrorsLeft.erase(mirrorsLeft.begin() + index);
-	}
-	glClear(GL_COLOR_BUFFER_BIT);
+	while (light.calcClosestReflection(mirrors)) {}
 
+	glClear(GL_COLOR_BUFFER_BIT);
 	glBegin(GL_LINE_STRIP);
 	// Draw Light Source
 	glColor3f(1, 0, 0);
@@ -123,6 +118,7 @@ void myDisplay(void) {
 	}
 	glEnd();
 
+	glutSwapBuffers();
 	glFlush();
 }
 
